@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Image with DALL·E 3</title>
+    <style>
+        body {
+            font-family: verdana, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        input, button {
+            margin-top: 8px;
+            margin-bottom: 8px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        #notification {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #ffdddd;
+            border: 1px solid #ffcccc;
+            color: #d8000c;
+            display: none;
+        }
+        #description {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        h1 {
+            text-transform: uppercase;
+            font-size: 200%;
+        }
+    </style>
+</head>
+<body>
+    <h1>DALL·E 3 API Tester</h1>
+    <div id="description">
+        This page is designed to help you test your OpenAI API key by generating an image using DALL·E 3 based on a prompt you provide. It is solely for testing purposes and does not perform any other functions.
+    </div>
+    <!-- Add a text box for the user to input their API key -->
+    API Key:
+    <input type="text" id="apiKeyInput" placeholder="Enter your API key here">
+    <!-- Add a text box for the user to type in a prompt -->
+    Prompt:
+    <input type="text" id="promptInput" placeholder="Enter your prompt here"><br>
+    <button id="generateImage">Generate Image</button><br>
+    <div id="notification"></div>
+    <img id="dalleImage" src="" alt="DALL·E Generated Image" style="max-width: 100%;">
+
+    <script>
+        document.getElementById('generateImage').addEventListener('click', async () => {
+            // Retrieve the API key from the text box:
+            const apiKey = document.getElementById('apiKeyInput').value;
+            // Retrieve the user's prompt from the text box
+            const prompt = document.getElementById('promptInput').value;
+            const notificationElement = document.getElementById('notification');
+
+            try {
+                const response = await fetch('https://api.openai.com/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'dall-e-3',
+                        prompt: prompt,
+                        n: 1,
+                        size: "1024x1024"
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to connect to OpenAI. Please check your API key and network connection.');
+                }
+                const data = await response.json();
+                console.log('API Response:', data); // Prints the entire API response in the console.
+
+                if (data.data && data.data.length > 0) {
+                    const imageUrl = data.data[0].url;
+                    document.getElementById('dalleImage').src = imageUrl;
+                    notificationElement.style.display = 'none';
+                } else {
+                    throw new Error('No images returned. This is likely due to a content policy error or server error from OpenAI.');
+                }
+            } catch (error) {
+                console.error('Error generating image:', error);
+                notificationElement.textContent = 'Error generating image: ' + error.message + (error.response ? (await error.response.json()).error : 'No additional error information from OpenAI.');
+                notificationElement.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
